@@ -1,0 +1,62 @@
+[
+  {
+    "locode": "NLRTM",
+    "name": "Port of Rotterdam",
+    "country": "NL",
+    "lat": 51.9225,
+    "lon": 4.4792,
+    "timezone": "Europe/Amsterdam",
+    "annual_teu": 14800000,
+    "type": "Seaport"
+  },
+  {
+    "locode": "CNSHA",
+    "name": "Port of Shanghai",
+    "country": "CN",
+    "lat": 31.2304,
+    "lon": 121.4737,
+    "timezone": "Asia/Shanghai",
+    "annual_teu": 47303000,
+    "type": "Seaport"
+  },
+  {
+    "locode": "AEJEA",
+    "name": "Jebel Ali Port",
+    "country": "AE",
+    "lat": 25.0157,
+    "lon": 55.0544,
+    "timezone": "Asia/Dubai",
+    "annual_teu": 14000000,
+    "type": "Seaport"
+  },
+  {
+    "locode": "SGSIN",
+    "name": "Port of Singapore",
+    "country": "SG",
+    "lat": 1.2644,
+    "lon": 103.8215,
+    "timezone": "Asia/Singapore",
+    "annual_teu": 37293000,
+    "type": "Seaport"
+  },
+  {
+    "locode": "DEHAM",
+    "name": "Port of Hamburg",
+    "country": "DE",
+    "lat": 53.5753,
+    "lon": 9.9895,
+    "timezone": "Europe/Berlin",
+    "annual_teu": 8300000,
+    "type": "Seaport"
+  },
+  {
+    "locode": "KRPUS",
+    "name": "Port of Busan",
+    "country": "KR",
+    "lat": 35.1028,
+    "lon": 129.0403,
+    "timezone": "Asia/Seoul",
+    "annual_teu": 22000000,
+    "type": "Seaport"
+  }
+]

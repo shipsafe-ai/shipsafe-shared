@@ -1,0 +1,20 @@
+{
+  "name": "@shipsafe/design",
+  "version": "0.1.0",
+  "description": "ShipSafe design tokens and Tailwind preset",
+  "type": "module",
+  "main": "./tokens.js",
+  "exports": {
+    ".": "./tokens.js",
+    "./tailwind": "./tailwind.preset.cjs"
+  },
+  "files": ["tokens.js", "tokens.d.ts", "tailwind.preset.cjs"],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0",
+    "typescript": "^5.4.0"
+  }
+}

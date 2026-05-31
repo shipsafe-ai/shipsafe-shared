@@ -1,0 +1,23 @@
+{
+  "name": "@shipsafe/cli-core",
+  "version": "0.1.0",
+  "description": "Shared CLI helpers for all ShipSafe agents",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./deploy": "./deploy.js",
+    "./secrets": "./secrets.js",
+    "./health": "./health.js",
+    "./prompts": "./prompts.js"
+  },
+  "files": ["*.js", "*.d.ts"],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0",
+    "typescript": "^5.4.0"
+  }
+}
