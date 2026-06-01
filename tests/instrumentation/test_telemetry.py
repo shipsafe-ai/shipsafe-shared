@@ -271,8 +271,15 @@ class TestDynatraceEnvVars:
             os.environ.get("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE") == "delta"
         )
 
-    def test_otlp_exporter_constructed_with_dt_endpoint(self, monkeypatch):
-        """OTLPSpanExporter receives the constructed DT endpoint as kwarg."""
+    def test_otlp_exporter_constructed_with_trace_endpoint(self, monkeypatch):
+        """OTLPSpanExporter receives the /v1/traces endpoint explicitly.
+
+        The base env var (OTEL_EXPORTER_OTLP_ENDPOINT) stays at /api/v2/otlp
+        for SDK-level metric/log signal discovery.  The span exporter gets the
+        full /v1/traces URL directly in its constructor so it does not rely on
+        the SDK appending the signal suffix (which behaves differently across
+        SDK versions and transport implementations).
+        """
         monkeypatch.setenv("DT_ENVIRONMENT", "https://abc123.live.dynatrace.com")
         monkeypatch.setenv("DT_OTLP_TOKEN", "dt-token")
 
@@ -288,7 +295,7 @@ class TestDynatraceEnvVars:
 
         MockExporter.assert_called_once()
         _, kwargs = MockExporter.call_args
-        assert kwargs.get("endpoint") == "https://abc123.live.dynatrace.com/api/v2/otlp"
+        assert kwargs.get("endpoint") == "https://abc123.live.dynatrace.com/api/v2/otlp/v1/traces"
 
     def test_span_processor_added_to_provider(self, monkeypatch):
         monkeypatch.setenv("DT_ENVIRONMENT", "https://abc123.live.dynatrace.com")

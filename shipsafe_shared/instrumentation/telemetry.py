@@ -25,6 +25,14 @@ Dynatrace fan-out (all four must be present to avoid silent-fail traps):
       OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE = delta
 
     See PARTNER-INTEGRATION.md §6 for the four silent-fail traps this addresses.
+
+Architecture note — provider ownership:
+    phoenix.otel.register() calls trace.set_tracer_provider() internally,
+    replacing whatever was previously the global.  To ensure Dynatrace's
+    BatchSpanProcessor lands on the SAME provider that becomes global,
+    _register_phoenix() must run FIRST and return that provider.  Dynatrace
+    is then added to the returned object.  If Phoenix is not active we create
+    our own provider, set it as global, then optionally add Dynatrace.
 """
 
 from __future__ import annotations
@@ -32,6 +40,7 @@ from __future__ import annotations
 import logging
 import os
 
+from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
@@ -43,23 +52,30 @@ def init_telemetry(project_name: str) -> TracerProvider:
     """
     Initialize OTel tracing for an agent.  Returns the configured TracerProvider.
 
-    Exporters are added based on env vars:
-    - Always: console exporter (dev visibility)
-    - If PHOENIX_API_KEY: Phoenix Cloud exporter via arize-phoenix-otel
-    - If DT_ENVIRONMENT + DT_OTLP_TOKEN: Dynatrace OTLP exporter
+    Call order matters:
+    1. Phoenix register() runs first — it creates and sets the global provider.
+    2. Dynatrace exporter is added to the provider register() returned.
+    This guarantees both exporters share one provider, which is the global one.
+
+    Exporters activated by env vars:
+    - Always: console exporter (dev visibility, no-op if Phoenix is active)
+    - If PHOENIX_API_KEY: Phoenix Cloud via arize-phoenix-otel
+    - If DT_ENVIRONMENT + DT_OTLP_TOKEN: Dynatrace OTLP HTTP/protobuf
 
     Args:
         project_name: agent identifier, e.g. "routeforge". Passed to Phoenix
                       as the project name and used in log messages.
     """
-    provider = TracerProvider()
-
-    provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
-
     if os.environ.get("PHOENIX_API_KEY"):
-        _register_phoenix(project_name)
+        # Phoenix creates and sets the global provider; capture it.
+        provider = _register_phoenix(project_name)
+    else:
+        provider = TracerProvider()
+        provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
+        trace.set_tracer_provider(provider)
 
     if os.environ.get("DT_ENVIRONMENT") and os.environ.get("DT_OTLP_TOKEN"):
+        # Add to the same provider that is already global.
         _add_dynatrace_exporter(provider)
     elif os.environ.get("DT_ENVIRONMENT") and not os.environ.get("DT_OTLP_TOKEN"):
         logger.warning(
@@ -71,13 +87,18 @@ def init_telemetry(project_name: str) -> TracerProvider:
     return provider
 
 
-def _register_phoenix(project_name: str) -> None:
+def _register_phoenix(project_name: str) -> TracerProvider:
     """
     Register Phoenix Cloud as an OTel destination.
 
-    Uses arize-phoenix-otel's register() which auto-detects every installed
-    OpenInference instrumentor (ADK, Vertex AI, etc.) and configures the
-    global tracer provider to export to Phoenix.
+    phoenix.otel.register() auto-detects every installed OpenInference
+    instrumentor, creates a TracerProvider wired to Phoenix, sets it as
+    the OTel global, and returns it.  We capture the return value so the
+    caller can add additional exporters (e.g. Dynatrace) to the same provider.
+
+    On failure: logs exception, creates a fallback TracerProvider with a
+    console exporter, sets it as global, and returns it.  Callers always
+    receive a usable provider regardless of Phoenix availability.
 
     Reads from env:
         PHOENIX_API_KEY               required
@@ -86,13 +107,20 @@ def _register_phoenix(project_name: str) -> None:
     try:
         from phoenix.otel import register  # type: ignore[import-untyped]
 
-        register(
+        provider = register(
             project_name=project_name,
             auto_instrument=True,
         )
         logger.info("Phoenix exporter registered for project '%s'", project_name)
+        return provider
     except Exception:
-        logger.exception("Phoenix exporter registration failed — traces will not reach Phoenix")
+        logger.exception(
+            "Phoenix exporter registration failed — traces will not reach Phoenix"
+        )
+        fallback = TracerProvider()
+        fallback.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
+        trace.set_tracer_provider(fallback)
+        return fallback
 
 
 def _add_dynatrace_exporter(provider: TracerProvider) -> None:
@@ -107,8 +135,9 @@ def _add_dynatrace_exporter(provider: TracerProvider) -> None:
        OTel SDK defaults to gRPC; Dynatrace only accepts HTTP/protobuf.
 
     2. OTEL_EXPORTER_OTLP_ENDPOINT = <DT_ENVIRONMENT>/api/v2/otlp
-       Base URL, no signal suffix — the SDK appends /v1/traces etc.
-       Including the suffix manually → 404.
+       Base URL without signal suffix — kept here for SDK-level metric/log
+       discovery.  The span exporter receives the explicit /v1/traces URL
+       in its constructor so it does not rely on env-var signal-path appending.
 
     3. OTEL_EXPORTER_OTLP_HEADERS = Authorization=Api-Token <token>
        Must use "Api-Token" prefix (not "Bearer").
@@ -125,14 +154,18 @@ def _add_dynatrace_exporter(provider: TracerProvider) -> None:
     dt_env = os.environ["DT_ENVIRONMENT"].rstrip("/")
     dt_token = os.environ["DT_OTLP_TOKEN"]
 
-    endpoint = f"{dt_env}/api/v2/otlp"
+    base_endpoint = f"{dt_env}/api/v2/otlp"
+    trace_endpoint = f"{base_endpoint}/v1/traces"
 
     os.environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http/protobuf"
-    os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = endpoint
+    os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = base_endpoint
     os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"Authorization=Api-Token {dt_token}"
     os.environ["OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE"] = "delta"
 
-    exporter = OTLPSpanExporter(endpoint=endpoint)
+    exporter = OTLPSpanExporter(
+        endpoint=trace_endpoint,
+        headers={"Authorization": f"Api-Token {dt_token}"},
+    )
     provider.add_span_processor(BatchSpanProcessor(exporter))
 
-    logger.info("Dynatrace OTLP exporter registered → %s", endpoint)
+    logger.info("Dynatrace OTLP exporter registered → %s", trace_endpoint)
