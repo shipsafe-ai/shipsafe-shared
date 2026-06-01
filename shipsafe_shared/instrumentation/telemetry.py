@@ -42,6 +42,7 @@ import os
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 
@@ -66,11 +67,14 @@ def init_telemetry(project_name: str) -> TracerProvider:
         project_name: agent identifier, e.g. "routeforge". Passed to Phoenix
                       as the project name and used in log messages.
     """
+    # Resource service.name enables Dynatrace service filtering and Phoenix project grouping.
+    resource = Resource.create({"service.name": project_name})
+
     if os.environ.get("PHOENIX_API_KEY"):
         # Phoenix creates and sets the global provider; capture it.
-        provider = _register_phoenix(project_name)
+        provider = _register_phoenix(project_name, resource)
     else:
-        provider = TracerProvider()
+        provider = TracerProvider(resource=resource)
         provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
         trace.set_tracer_provider(provider)
 
@@ -87,7 +91,7 @@ def init_telemetry(project_name: str) -> TracerProvider:
     return provider
 
 
-def _register_phoenix(project_name: str) -> TracerProvider:
+def _register_phoenix(project_name: str, resource: Resource | None = None) -> TracerProvider:
     """
     Register Phoenix Cloud as an OTel destination.
 
@@ -107,17 +111,17 @@ def _register_phoenix(project_name: str) -> TracerProvider:
     try:
         from phoenix.otel import register  # type: ignore[import-untyped]
 
-        provider = register(
-            project_name=project_name,
-            auto_instrument=True,
-        )
+        kwargs: dict = {"project_name": project_name, "auto_instrument": True}
+        if resource is not None:
+            kwargs["resource"] = resource
+        provider = register(**kwargs)
         logger.info("Phoenix exporter registered for project '%s'", project_name)
         return provider
     except Exception:
         logger.exception(
             "Phoenix exporter registration failed — traces will not reach Phoenix"
         )
-        fallback = TracerProvider()
+        fallback = TracerProvider(resource=resource or Resource.create({}))
         fallback.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
         trace.set_tracer_provider(fallback)
         return fallback

@@ -18,7 +18,7 @@ Coverage targets:
 import importlib
 import os
 import sys
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import ANY, MagicMock, call, patch
 
 import pytest
 
@@ -117,7 +117,7 @@ class TestPhoenixOnly:
             from shipsafe_shared.instrumentation.telemetry import init_telemetry
             init_telemetry("naviguard")
 
-        mock_phoenix.assert_called_once_with("naviguard")
+        mock_phoenix.assert_called_once_with("naviguard", ANY)
 
     def test_dynatrace_not_added_when_no_dt_env(self, monkeypatch):
         monkeypatch.setenv("PHOENIX_API_KEY", "pk-test-key")
@@ -187,7 +187,7 @@ class TestBothExporters:
             from shipsafe_shared.instrumentation.telemetry import init_telemetry
             provider = init_telemetry("agentops")
 
-        mock_phoenix.assert_called_once_with("agentops")
+        mock_phoenix.assert_called_once_with("agentops", ANY)
         mock_dt.assert_called_once_with(provider)
 
 
@@ -377,4 +377,4 @@ class TestProjectName:
             from shipsafe_shared.instrumentation.telemetry import init_telemetry
             init_telemetry(agent_name)
 
-        mock_phoenix.assert_called_once_with(agent_name)
+        mock_phoenix.assert_called_once_with(agent_name, ANY)
