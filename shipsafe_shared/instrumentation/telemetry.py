@@ -26,13 +26,22 @@ Dynatrace fan-out (all four must be present to avoid silent-fail traps):
 
     See PARTNER-INTEGRATION.md §6 for the four silent-fail traps this addresses.
 
-Architecture note — provider ownership:
-    phoenix.otel.register() calls trace.set_tracer_provider() internally,
-    replacing whatever was previously the global.  To ensure Dynatrace's
-    BatchSpanProcessor lands on the SAME provider that becomes global,
-    _register_phoenix() must run FIRST and return that provider.  Dynatrace
-    is then added to the returned object.  If Phoenix is not active we create
-    our own provider, set it as global, then optionally add Dynatrace.
+Architecture note — provider ownership and Phoenix's add_span_processor:
+    phoenix.otel.register() creates a _TracerProvider (Phoenix subclass) with
+    a default SimpleSpanProcessor, sets it as the OTel global, and marks
+    provider._default_processor = True.
+
+    Phoenix's _TracerProvider.add_span_processor() has a side effect:
+    when _default_processor is True, it calls shutdown() on the existing
+    multi-processor before clearing it — then adds the new processor via
+    super().add_span_processor(). This means DT's BatchSpanProcessor is
+    added to an already-shutdown SynchronousMultiSpanProcessor, so
+    force_flush() returns True trivially but exports nothing.
+
+    Fix: pass replace_default_processor=False to Phoenix's add_span_processor.
+    This adds DT's BSP alongside Phoenix's (no shutdown, no replacement).
+    For non-Phoenix providers that don't accept this kwarg, fall back to
+    the standard call via try/except TypeError.
 """
 
 from __future__ import annotations
@@ -170,6 +179,15 @@ def _add_dynatrace_exporter(provider: TracerProvider) -> None:
         endpoint=trace_endpoint,
         headers={"Authorization": f"Api-Token {dt_token}"},
     )
-    provider.add_span_processor(BatchSpanProcessor(exporter))
+    bsp = BatchSpanProcessor(exporter)
+
+    # Phoenix's _TracerProvider.add_span_processor() accepts replace_default_processor=False
+    # to ADD alongside the existing Phoenix processor rather than shutting it down first.
+    # Standard OTel TracerProvider.add_span_processor() does not accept this kwarg,
+    # so we fall back to the plain call if TypeError is raised.
+    try:
+        provider.add_span_processor(bsp, replace_default_processor=False)  # type: ignore[call-arg]
+    except TypeError:
+        provider.add_span_processor(bsp)
 
     logger.info("Dynatrace OTLP exporter registered → %s", trace_endpoint)
