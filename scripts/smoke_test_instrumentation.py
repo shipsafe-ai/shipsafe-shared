@@ -115,9 +115,12 @@ def main() -> int:
     batch_count = _count_batch_processors(provider)
     if batch_count >= 0:
         print(f"      BatchSpanProcessors on provider: {batch_count}")
-        if batch_count < 2:
-            print("  WARNING: expected >= 2 (Phoenix + Dynatrace)")
-            print("           Provider-ownership bug may still be present.")
+        # Phoenix uses SimpleSpanProcessor (not BatchSpanProcessor) so expected count is 1 (DT only).
+        # If 0: DT exporter was not attached. If >= 1: DT is attached correctly.
+        if batch_count == 0:
+            print("  ERROR: Dynatrace BatchSpanProcessor not found — DT exporter not attached")
+        else:
+            print(f"  OK: Dynatrace exporter attached (Phoenix uses SimpleSpanProcessor)")
     else:
         print("      (processor count unavailable — SDK internals changed)")
 
