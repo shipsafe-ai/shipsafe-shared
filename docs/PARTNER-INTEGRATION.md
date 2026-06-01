@@ -1467,6 +1467,30 @@ useful errors. Verify each one in `shipsafe-shared/instrumentation`:
    accepts cumulative but its dashboards expect delta. Without
    the env var, metrics ingest but counters look weird.
 
+### GAP — Fifth trap: Phoenix's add_span_processor overwrites default
+
+Phoenix's `_TracerProvider.add_span_processor()` shuts down its
+existing processor before adding the new one. Adding Dynatrace's
+`BatchSpanProcessor` via the default call path destroys Phoenix's
+processor and adds DT to an already-shutdown multi-processor.
+`force_flush()` returns True trivially but exports nothing.
+
+Fix (in shipsafe_shared/instrumentation/telemetry.py): pass
+`replace_default_processor=False` to Phoenix's `add_span_processor`.
+This adds DT alongside Phoenix without shutdown. Falls back to plain
+`add_span_processor()` via try/except TypeError for non-Phoenix providers.
+
+### GAP — Dynatrace free trial does NOT include Grail trace storage
+
+The free trial exposes the OTLP ingest endpoint and returns HTTP 200,
+but trace data requires a licensed plan ("Custom Traces Classic" or
+"FullStack" coverage). `fetch spans` DQL returns 0 records on trial.
+
+Verified: HTTP 200, correct payload, correct token scopes.
+Workaround for dev: accept HTTP 200 as smoke test pass.
+For production/hackathon submission: use a cloud marketplace
+Dynatrace deployment or request an extended trial with trace coverage.
+
 ### Layer 2 — Authentication (Secret Manager keys)
 
 | Variable | Scope | Used by |
