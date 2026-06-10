@@ -1,0 +1,46 @@
+# CargoDB — Demo Video Script (3:30)
+**Track:** MongoDB · **Accent:** #10B981 emerald · **Tagline:** *"Your data from different sources is quietly lying to you."* → reframed for the built product: *"Give your AI agents a memory that remembers."*
+**Live URLs:** API `https://cargodb-o34wppiwiq-uc.a.run.app` · Dashboard `https://cargodb-dashboard-336382452417.us-central1.run.app`
+**⚠ NOTE:** the CargoDB CLI (`cli/bin/cargodb.js`) prints a malformed dashboard link `...336382452417.a.run.app` (missing region → **404**). The working URL is the one above (`.us-central1.run.app`). Fix the CLI string before a judge runs `init`.
+**Verified against code 2026-06-11.**
+
+---
+
+## ⚠ ACCURACY GUARDRAILS (read before recording)
+- ✅ **Gemini is now the BRAIN of the decision (upgraded 2026-06-11).** Recall is still pure Atlas `$vectorSearch` (cosine, the right MongoDB-track design), but a new **DecisionReasoner** specialist has Gemini reason over the recalled precedents to choose the action + write a rationale + chain-of-thought, and the **Critic** is also Gemini. **Verified live:** Gemini chose `divert_oman_sea` (0.9) with rationale "highest-scoring precedent has null outcome… dec-hormuz-2019-001 is most relevant." Say: *Atlas Vector Search recalls; Gemini reasons over the precedents to decide; a Gemini Critic challenges it.* Dashboard "Pending Approvals" shows the Gemini reasoning + collapsible thinking.
+- ✅ Pipeline now runs 4 specialists + reasoner + critic: MemoryRecall → ManifestAuditor → SchemaHarmonizer → MigrationGuardian → DecisionReasoner (Gemini) → Critic (Gemini). (The 2 schema/migration specialists were dormant before today; now active — `schema_report` + `migration_report` in the `/run` response.)
+- ⚠ **Use the working demo path.** The npx JS demo (`npx shipsafe-cargodb demo`) is **broken** — it POSTs `{scenario:"hormuz"}` and gets HTTP 422. The working trigger is the **Python CLI `cargodb demo`** (posts a full Hormuz `EventPayload`) or the dashboard **Run** path. Show the dashboard / Python CLI.
+- ⚠ Package is **`shipsafe-cargodb`** (bin `cargodb`), not `@shipsafe/cargodb`.
+- ⚠ **"23 vessel conflicts" is not in code.** Demo event lists 3 affected vessels; the live AIS path tracks 5 MMSIs and flags conflicts dynamically. Don't put "23" on screen.
+- ✅ Real, strong, and verifiable: CargoDB builds memory from **live AIS vessel telemetry** (`wss://stream.aisstream.io`, 5 real vessels in a Hormuz bounding box) → writes `vessel_profile` / `conflict_detected` decisions to Atlas with **Voyage AI `voyage-3.5-lite` 1024-dim embeddings** → later queries recall them by `$vectorSearch`.
+- ✅ Real MongoDB MCP tools (`mongodb-mcp-server` over stdio): `aggregate` (carries the `$vectorSearch` pipeline), `insert-many`, `find`, `create-index`, `collection-indexes`, `explain`, `atlas-get-performance-advisor`, `atlas-list-alerts`. Index: **`decisions_vector_idx`**, 1024-dim cosine.
+- ✅ Human approval gate is real: `/run` returns `status:"pending_approval"`; nothing is written to Atlas until `POST /approve`. The MemoryWriter only persists after approval.
+- ⚠ Recall similarity threshold ≥ 0.75 and the decision build (recommend top match if score ≥ 0.75, else fall back to `reroute_cape` @ 0.6) are **code**, not Gemini.
+
+---
+
+## SCRIPT
+
+| Time | SCREEN | NARRATOR (V.O.) |
+|---|---|---|
+| 0:00–0:10 | Black. A chat-style AI agent answers a question, then 5 minutes later answers the *same* question differently. Caption: *"same agent. no memory."* | *(silence 2s)* "Your AI agents are brilliant and amnesiac. Every decision starts from zero. They've solved this exact problem before — and they don't remember." |
+| 0:10–0:30 | A crisis hits: "Strait of Hormuz closed." An agent scrambles from scratch. Beside it, a faded ghost of "Red Sea 2024 → rerouted via Cape" it can't access. | "When the Strait of Hormuz closes, your routing agent has to reason from nothing — even though your fleet already handled the Red Sea in 2024 and the Suez in 2021. The institutional memory exists. It's just not *retrievable*. So every crisis is the first crisis." |
+| 0:30–0:55 | Six ShipSafe agents tile in; emerald CargoDB highlights last. | *(shared 30s pitch)* "ShipSafe is a fleet of six AI agents… the human decides, always. Today: CargoDB — the shared memory of the fleet." |
+| 0:55–1:15 | Dashboard tabs: Memory Browser · Vector Similarity · Schema Drift · Pending Approvals. | "CargoDB is persistent, semantic memory for AI agents, built on MongoDB Atlas Vector Search. Here's the architecture that matters: recall is *not* an LLM — it's Atlas Vector Search over Voyage-AI embeddings, so 'have we seen this before' is a millisecond similarity query, not a guess. Gemini comes in as the adversarial Critic — it challenges the routing decision before any human sees it." |
+| **1:15–1:40** | Trigger the Hormuz event (dashboard Run / `cargodb demo`). **MemoryRecall** fires; the Vector Similarity tab fills with scored matches — Red Sea 2024, Suez 2021 — each with a colored % score bar. | "Watch it remember. The Hormuz closure fires. MemoryRecall embeds the event with Voyage AI and runs an Atlas `$vectorSearch` over every past decision. There — Red Sea 2024, Suez 2021, scored by semantic similarity. Real recall, against the fleet's actual history." |
+| **1:40–2:05** | **ManifestAuditor** lists affected cargo from `cargo_manifests` (`find`). The decision builds: top match ≥ 0.75 → recommend `reroute_cape` at the match's confidence. | "ManifestAuditor pulls the cargo actually on those vessels. Then the recall does its job: the closest past decision scores above threshold, so CargoDB recommends the same play that worked before — reroute via the Cape — carrying the confidence of the precedent. It's reasoning from experience, not from scratch." |
+| **2:05–2:30** | **Critic (Gemini)** card: `approved` / `concerns[]` / `risk_level`, and `requires_human_approval = true`. | "Now Gemini earns its place. The Critic adversarially reviews the recommendation — does the evidence support it, is the confidence honest, did anything in the input try to manipulate the decision? It returns a structured risk verdict and flags it: requires human approval." |
+| **2:30–2:50** | Pending Approvals tab: the decision card with action, confidence %, similar-count, risk badge, concerns, **Approve / Reject**. Click **Approve**. MemoryWriter writes it back to Atlas. | "And it stops at the gate. The operator sees the recommendation, the precedent, the risk — and decides. On approve, MemoryWriter embeds this decision and writes it back to Atlas. The system just got smarter for the *next* crisis. The loop closes." |
+| 2:50–3:08 | Show the live AIS angle: `ais_stream.py` tracking 5 real vessels in the Hormuz box, writing `conflict_detected` decisions. | "And the memory isn't static fixtures — CargoDB ingests *live* AIS telemetry. Five real vessels, tracked by MMSI inside the Hormuz chokepoint, each conflict written to Atlas with a Voyage embedding. So tomorrow's query can recall 'this exact vessel, last seen in this exact conflict zone' against real history." |
+| 3:08–3:20 | One slide: `vessel decisions → support tickets → fraud cases → clinical notes`. | "CargoDB is demonstrated on maritime decisions. It's semantic memory for *any* agent — recall past support resolutions, prior fraud rulings, similar clinical cases. Same Atlas Vector Search. Same loop." |
+| 3:20–3:30 | Dashboard. End frame: CargoDB mark, tagline, MongoDB + Google Cloud logos. | "Give your agents a memory that remembers — and a Critic that doubts. One command. Three minutes. CargoDB." |
+
+---
+
+## Devpost description (≈140 words)
+CargoDB is persistent, semantic memory for AI agents, built on MongoDB Atlas Vector Search and Voyage AI embeddings. Most agents are amnesiac — every decision starts from zero, even when the same problem was solved last month. CargoDB stores every agent decision in Atlas with a 1024-dimension Voyage embedding, so "have we seen this before?" becomes a millisecond `$vectorSearch` similarity query — real recall, not an LLM guess. When a crisis hits, CargoDB recalls the closest past decisions, recommends the precedent that worked, and routes it through an adversarial Gemini Critic that challenges the decision and flags it for a mandatory human approval gate before anything is written back. Memory is built from live AIS vessel telemetry, not static fixtures. Demonstrated on maritime routing; works as semantic memory for any agent — support, fraud, clinical, legal.
+
+## Social captions
+1. Your AI agents solved this exact problem last month and don't remember. CargoDB gives them semantic memory on MongoDB Atlas Vector Search — recall by similarity in milliseconds, then an adversarial Gemini Critic before any human sees it. #GoogleCloud
+2. Recall shouldn't be a guess. CargoDB does "have we seen this before?" as a real Atlas `$vectorSearch` over Voyage-AI embeddings — built from *live* AIS vessel telemetry, not fixtures. #MongoDB #AIagents
+3. Every crisis feels like the first crisis because your agents have no memory. CargoDB remembers Red Sea 2024 when Hormuz closes — and recommends the reroute that already worked. The machine remembers. You decide. #GoogleCloud
