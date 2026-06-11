@@ -16,6 +16,27 @@
 
 ---
 
+## WHAT'S IN "Run Hormuz Demo" (the deterministic fixture)
+
+The Hormuz Demo feeds the pipeline **5 fixed spans** (in `agent/orchestrator.py: _HORMUZ_SPANS`) — so the verdict is identical every run:
+
+| Category | Confidence(s) | vs threshold 0.70 |
+|---|---|---|
+| **BLOCK** | 0.45 · 0.41 · 0.48 (mean **~0.45**) | ✗ failing |
+| **ROUTE** | 0.87 | ✓ healthy |
+| **HOLD** | 0.85 | ✓ healthy |
+
+What appears on screen with this data:
+- **ModelMonitor** → "Analyzed 5 spans — regression_hint=True"
+- **RegressionDetector** → flags **BLOCK** category (mean ~0.45 below 0.70)
+- **Analysis** → pattern **NOVEL_DISTRIBUTION** + a recommended prompt fix (runs — does NOT "skip")
+- **Critic** → **CORRECT**, with its **chain-of-thought** in the expandable panel
+- Approve → dataset + `naviguard-proposed` prompt version → **LOOP CLOSED: YES**
+
+> The **heatmap / timeline / tiles** read a separate **seeded Phoenix dataset** (25 traces → **9** BLOCK spans below threshold, BLOCK 0.45 / ROUTE 0.87 / HOLD 0.85). Same categories, same numbers as the fixture — so the verdict and the heatmap agree on screen. (`Run Pipeline` reads this live Phoenix data directly and is non-deterministic — that's why it can say UNKNOWN. Stick to Hormuz Demo.)
+
+---
+
 ## SCRIPT
 
 ---
