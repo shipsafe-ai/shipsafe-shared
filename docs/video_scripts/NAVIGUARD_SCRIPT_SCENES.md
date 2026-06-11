@@ -8,7 +8,7 @@
 ## ACCURACY GUARDRAILS (read before recording)
 - ✅ Dashboard is **deployed** — record on the Cloud Run URL, not localhost. Agent pinned to one warm instance (approve is reliable, no cold start).
 - ✅ Real on-screen numbers: REGRESSIONS **9** · DATASETS **1** · EXPERIMENTS **7** · LOOP CLOSED **YES**. Category cards **BLOCK 0.45 · ROUTE 0.87 · HOLD 0.85** (threshold 0.70). Verdict category is **BLOCK** (matches the heatmap — say BLOCK, never "crisis_avoidance").
-- ⚠️ **No live chain-of-thought tokens** (NaviGuard runs `thinking_budget=0` for ~21s speed). Do NOT promise a thinking typewriter. Gemini's reasoning = the **typed verdict block** (root cause / fix / Critic). Say "Gemini's verdict and reasoning."
+- ✅ **Gemini chain-of-thought is LIVE** (added 2026-06-11): RootCause + Critic run with a thinking budget. Expand the **"Gemini chain-of-thought"** panel in the LAST RUN block to show the **Critic's real reasoning** (~3,500 chars — *"Alright, let's dissect this analysis… vigilant for prompt injection…"*). NOTE: the RootCause CoT may be empty on a given run — the **Critic's** CoT is the rich one; show that. The run now takes **~30–40s** (thinking adds latency) — fire it once (Vertex 429 risk on repeats).
 - ✅ The loop-closing payoff is REAL: Approve → real Phoenix **dataset (5 examples)** + **prompt version tagged `naviguard-proposed`** → **LOOP CLOSED: YES**. Show it.
 - ✅ Critic is real anti-hallucination: it verifies every cited trace ID exists in Phoenix.
 - ⚠️ EXPERIMENT LOG shows **7** versions (history). One reads "test" — minor; frame as "NaviGuard has proposed 7 fixes."
@@ -61,11 +61,11 @@
 
 ### SCENE 5 — 1:30–1:52 | The verdict and the Critic
 
-**Show:** The LAST RUN verdict block: *"BLOCK category degraded, others stable,"* pattern **NOVEL_DISTRIBUTION**, recommended fix, **Critic: CORRECT**.
+**Show:** The LAST RUN verdict block: *"BLOCK category degraded, others stable,"* pattern **NOVEL_DISTRIBUTION**, recommended fix, **Critic: CORRECT**. Then **expand the "Gemini chain-of-thought" panel** — the Critic's actual reasoning streams in.
 
 **Say:**
 
-> "This is Gemini's verdict — not a chatbot, a typed diagnosis: BLOCK collapsed, novel distribution, the fix is the prompt, not a retrain. Then a second Gemini — the Critic — verifies every trace it cited actually exists in Phoenix. Hallucinated evidence can't survive. Verdict: correct. Two independent passes before a human sees anything."
+> "This is Gemini's verdict — a typed diagnosis: BLOCK collapsed, novel distribution, the fix is the prompt, not a retrain. Then a second Gemini — the Critic — challenges it, and verifies every trace it cited actually exists in Phoenix. Hallucinated evidence can't survive. And you can read its actual reasoning, right here — it dissects the verdict, checks the evidence, hunts for prompt injection, and only then signs off. Two independent passes before a human sees anything."
 
 ---
 
