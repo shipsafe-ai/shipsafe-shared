@@ -6,6 +6,7 @@
 ---
 
 ## ACCURACY GUARDRAILS (read before recording)
+- 🔴 **USE THE "Run Hormuz Demo" BUTTON — NOT "Run Pipeline".** "Run Hormuz Demo" uses the deterministic fixture (3 BLOCK spans @ 0.45) and **reliably detects the BLOCK regression + runs the full diagnosis, Critic chain-of-thought, and loop close** every time. "Run Pipeline" reads *live* Phoenix and is non-deterministic — it can return `UNKNOWN / no regression / pipeline healthy`, which is the opposite of the demo. Never click Run Pipeline on camera.
 - ✅ Dashboard is **deployed** — record on the Cloud Run URL, not localhost. Agent pinned to one warm instance (approve is reliable, no cold start).
 - ✅ Real on-screen numbers: REGRESSIONS **9** · DATASETS **1** · EXPERIMENTS **7** · LOOP CLOSED **YES**. Category cards **BLOCK 0.45 · ROUTE 0.87 · HOLD 0.85** (threshold 0.70). Verdict category is **BLOCK** (matches the heatmap — say BLOCK, never "crisis_avoidance").
 - ✅ **Gemini chain-of-thought is LIVE** (added 2026-06-11): RootCause + Critic run with a thinking budget. Expand the **"Gemini chain-of-thought"** panel in the LAST RUN block to show the **Critic's real reasoning** (~3,500 chars — *"Alright, let's dissect this analysis… vigilant for prompt injection…"*). NOTE: the RootCause CoT may be empty on a given run — the **Critic's** CoT is the rich one; show that. The run now takes **~30–40s** (thinking adds latency) — fire it once (Vertex 429 risk on repeats).
@@ -51,7 +52,7 @@
 
 ### SCENE 4 — 0:55–1:30 | Run the pipeline — live
 
-**Show:** Click **Run Pipeline**. The LAST RUN STEPS stream live, flipping ●→✓: **ModelMonitor** (5 spans, regression_hint=true) → **RegressionDetector** (BLOCK 0.45) → **Analysis** (NOVEL_DISTRIBUTION) → **Critic**.
+**Show:** Click **Run Hormuz Demo** (NOT "Run Pipeline" — see guardrail). The LAST RUN STEPS stream live, flipping ●→✓: **ModelMonitor** (regression_hint=true) → **RegressionDetector** (BLOCK 0.45) → **Analysis** (NOVEL_DISTRIBUTION) → **Critic**.
 
 **Say:**
 
