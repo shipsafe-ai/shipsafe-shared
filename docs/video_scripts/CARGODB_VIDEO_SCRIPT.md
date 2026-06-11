@@ -1,7 +1,7 @@
 # CargoDB — Demo Video Script (3:30)
 **Track:** MongoDB · **Accent:** #10B981 emerald · **Tagline:** *"Your data from different sources is quietly lying to you."* → reframed for the built product: *"Give your AI agents a memory that remembers."*
 **Live URLs:** API `https://cargodb-o34wppiwiq-uc.a.run.app` · Dashboard `https://cargodb-dashboard-336382452417.us-central1.run.app`
-**⚠ NOTE:** the CargoDB CLI (`cli/bin/cargodb.js`) prints a malformed dashboard link `...336382452417.a.run.app` (missing region → **404**). The working URL is the one above (`.us-central1.run.app`). Fix the CLI string before a judge runs `init`.
+**✓ CLI updated to v0.2.0:** the dashboard link is now correct (`...us-central1.run.app`) and `npx shipsafe-cargodb demo` is fixed (see guardrails). Commands `init | demo | connect | health` all work.
 **Verified against code 2026-06-11.**
 
 ---
@@ -9,7 +9,7 @@
 ## ⚠ ACCURACY GUARDRAILS (read before recording)
 - ✅ **Gemini is now the BRAIN of the decision (upgraded 2026-06-11).** Recall is still pure Atlas `$vectorSearch` (cosine, the right MongoDB-track design), but a new **DecisionReasoner** specialist has Gemini reason over the recalled precedents to choose the action + write a rationale + chain-of-thought, and the **Critic** is also Gemini. **Verified live:** Gemini chose `divert_oman_sea` (0.9) with rationale "highest-scoring precedent has null outcome… dec-hormuz-2019-001 is most relevant." Say: *Atlas Vector Search recalls; Gemini reasons over the precedents to decide; a Gemini Critic challenges it.* Dashboard "Pending Approvals" shows the Gemini reasoning + collapsible thinking.
 - ✅ Pipeline now runs 4 specialists + reasoner + critic: MemoryRecall → ManifestAuditor → SchemaHarmonizer → MigrationGuardian → DecisionReasoner (Gemini) → Critic (Gemini). (The 2 schema/migration specialists were dormant before today; now active — `schema_report` + `migration_report` in the `/run` response.)
-- ⚠ **Use the working demo path.** The npx JS demo (`npx shipsafe-cargodb demo`) is **broken** — it POSTs `{scenario:"hormuz"}` and gets HTTP 422. The working trigger is the **Python CLI `cargodb demo`** (posts a full Hormuz `EventPayload`) or the dashboard **Run** path. Show the dashboard / Python CLI.
+- ✅ **Demo path (fixed v0.2.0):** `npx shipsafe-cargodb demo` now POSTs a full Hormuz `EventPayload` and works (verified `divert_oman_sea`). The dashboard **Run** path and the Python CLI `cargodb demo` also work — any of the three is safe on camera.
 - ⚠ Package is **`shipsafe-cargodb`** (bin `cargodb`), not `@shipsafe/cargodb`.
 - ⚠ **"23 vessel conflicts" is not in code.** Demo event lists 3 affected vessels; the live AIS path tracks 5 MMSIs and flags conflicts dynamically. Don't put "23" on screen.
 - ✅ Real, strong, and verifiable: CargoDB builds memory from **live AIS vessel telemetry** (`wss://stream.aisstream.io`, 5 real vessels in a Hormuz bounding box) → writes `vessel_profile` / `conflict_detected` decisions to Atlas with **Voyage AI `voyage-3.5-lite` 1024-dim embeddings** → later queries recall them by `$vectorSearch`.

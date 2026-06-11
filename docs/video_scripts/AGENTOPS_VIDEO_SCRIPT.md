@@ -16,7 +16,7 @@
 - ⚠ **Demo telemetry is synthetically SEEDED**, then queried back — not captured from live running agents. Say "we seed the crisis telemetry into Dynatrace, then AgentOps queries it back through Grail." That's honest and still impressive.
 - ✅ It observes **6 services including agentops itself** (`SHIPSAFE_AGENTS` = all 6), not "the other 5." Minor — "the fleet" is the safe phrasing.
 - ✅ Real Gemini token tracking is genuine: every specialist reads ADK `usage_metadata` into `gemini_prompt_tokens`/`gemini_completion_tokens`, aggregated on the result. IncidentNarrator captures real chain-of-thought via `ThinkingConfig(include_thoughts=True)`.
-- ⚠ Commands: **`agentops demo --api <url>`** (seed → wait 90s → run) — package `shipsafe-agentops`, commands `health|fleet|run|demo`. No `init`/`connect`.
+- ✅ Commands (v0.2.0): package `shipsafe-agentops` — `init | demo | connect | health | fleet | run`. `npx shipsafe-agentops demo` seeds → waits ~90s → runs the pipeline.
 - ⚠ Human gate is **display + non-execution** (no interactive approve button): banners read Approved / Requires Human Review / Blocked. Frame it as "it surfaces the verdict and never auto-acts," not "click approve."
 
 ---

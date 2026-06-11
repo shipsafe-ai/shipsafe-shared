@@ -6,7 +6,7 @@
 ---
 
 ## ⚠ ACCURACY GUARDRAILS (read before recording)
-- ⚠ **There is NO `routeforge demo` CLI command** (CLI has only `init` + `status`). The demo is **server-side**: a startup auto-seed re-fires three demo merge requests (**iids 1, 2, 3**), and `POST /demo/seed` re-seeds on demand. Trigger the demo by hitting `/demo/seed` or just open the dashboard after a cold start. Show the dashboard, not a fake `demo` command.
+- ✅ **CLI updated to v0.2.0** — `init | demo | connect | health | status`. `npx shipsafe-routeforge demo` triggers the server-side seed (`POST /demo/seed`) which re-fires three demo merge requests (**iids 1, 2, 3**); a startup auto-seed also fires on cold start. Richest on camera is the dashboard verdict feed; the `demo`/`status` CLI also works.
 - ⚠ **There is NO "MR !447", no "-200 penalty", no "31% vs 72%", no "confidence 94"** anywhere in code. The verdict and confidence are a **live Gemini output over the real diffs** of GitLab project 82762386 at run time. Do NOT put scripted numbers on screen — read whatever the live run shows.
 - ✅ Real specialist order (verified): CommitWatcher → Critic injection-scan → PipelineObserver → ScenarioTester → CodeContextAnalyzer → RiskGate (Gemini) → Critic challenge → ChangelogWriter. **Critic runs twice.**
 - ✅ **Thinking tokens are real:** RiskGate budget 8192, Critic 4096; `thinking_tokens` surfaced in the UI from `thoughts_token_count`. Show the thinking-token badge.
