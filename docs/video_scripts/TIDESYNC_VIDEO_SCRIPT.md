@@ -1,6 +1,6 @@
 # TideSync — Demo Video Script (3:30)
 **Track:** Fivetran · **Accent:** #8B5CF6 violet · **Tagline:** *"Your pipeline succeeded. Your data is still wrong."*
-**Live URL:** `https://tidesync-336382452417.us-central1.run.app` (agent + dashboard, same Cloud Run service)
+**Live URLs:** Agent API `https://tidesync-336382452417.us-central1.run.app` · Dashboard `https://tidesync-dashboard-o34wppiwiq-uc.a.run.app` (**separate** Cloud Run service — record on the dashboard URL; the agent root returns 404)
 **Verified against code 2026-06-11.**
 
 ---
